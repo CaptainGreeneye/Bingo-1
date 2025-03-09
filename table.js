@@ -159,92 +159,42 @@ function handleCellClick(idx) {
   }
 }
 
-//Збереження даних
-function saveState() {
-  let state = {
-    id: stateList.length,
-    state: containerDiv.innerHTML
-  };
-  stateList.push(state);
-  window.localStorage.setItem('videoState', JSON.stringify(stateList));
-  window.history.pushState({}, '', '#' + btoa(JSON.stringify(stateList)));
-}
-
-if (window.location.hash) {
-  let stateListFromStorage = JSON.parse(atob(window.location.hash.substring(1)));
-  let stateToRestore = stateListFromStorage[stateListFromStorage.length - 1];
-  containerDiv.innerHTML = stateToRestore.state;
-  init();
-}
-
-
-
-
-//Старий код
-/*function checkWin(table) {
-  const rows = table.querySelectorAll("tr");
-
-
-  for (let i = 0; i < rows.length; i++) {
-    let win = true;
-    const cells = rows[i].querySelectorAll("td");
-    for (let j = 0; j < cells.length; j++) {
-      if (!cells[j].classList.contains("selected")) {
-        win = false;
-        break;
+//Режим автора
+document.addEventListener("DOMContentLoaded", () => {
+  const authorModeToggle = document.getElementById("authorModeToggle"); // Передбачимо, що є перемикач
+  if (authorModeToggle) {
+    authorModeToggle.addEventListener("change", () => {
+      state.isAuthorMode = authorModeToggle.checked;
+      if (state.isAuthorMode) {
+        state.selected = [];
+        document.querySelector("win").hidden = true;
+        render();
       }
-    }
-    if (win) {
-      alert("Bingo");
-      document.querySelector(".bingo").hidden = false;
-      return;
-    }
+    });
   }
 
-  const num = rows.length;
+  document.getElementById("table").addEventListener("click", (event) => {
+    if (!state.isAuthorMode) return; // Якщо режим не увімкнено — не даємо редагувати
 
-  for (let i = 0; i < num; i++) {
-    let win = true;
+    const cell = event.target;
+    if (cell.tagName !== "TD") return;
 
-    for (let j = 0; j < num; j++) {
-      const cell = rows[j].querySelectorAll("td")[i];
-      if (!cell.classList.contains("selected")) {
-        win = false;
-        break;
-      }
-    }
-    if (win) {
-      alert("Bingo");
-      document.querySelector(".bingo").hidden = false;
-      return;
-    }
-  }
-}
+    const rowIndex = cell.parentElement.rowIndex;
+    const cellIndex = cell.cellIndex;
+    const idx = rowIndex * 5 + cellIndex; // Для 5x5 таблиці
 
-export function generateTable(num) {
-  const table = document.createElement("table");
-  const tbody = document.createElement("tbody");
-  table.appendChild(tbody);
-
-  for (let i = 0; i < num; i++) {
-    const tr = document.createElement("tr");
-    for (let j = 0; j < num; j++) {
-      const td = document.createElement("td");
-      td.textContent = i * num + j;
-      tr.appendChild(td);
-
-      td.addEventListener("click", () => {
-        td.classList.toggle("selected");
-
-        checkWin(table);
+    event.stopPropagation();
+    if (!cell.querySelector("textarea")) {
+      const textarea = document.createElement("textarea");
+      textarea.value = cell.textContent;
+      textarea.addEventListener("blur", () => {
+        state.texts[idx] = textarea.value;
+        cell.textContent = textarea.value;
+        state.currentlyEditing = null;
       });
+      cell.textContent = "";
+      cell.appendChild(textarea);
+      textarea.focus();
     }
-    tbody.appendChild(tr);
-  }
-
-
-
-
-  render(table);
-  return table;
-}*/
+  });
+});
