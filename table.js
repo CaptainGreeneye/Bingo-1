@@ -1,13 +1,13 @@
 const state = {
-  texts: ["тест", "foo"],
-  selected: [2, 3, 5, 7],
-  isAuthorMode: true,
+  texts: [],
+  selected: [],
+  isAuthorMode: false,
   currentlyEditing: null,
 };
 
-export function rende(table) {
+export function render(table) {
   const tableElement = table ?? document.querySelector("table");
-  const cells = [...table.querySelectorAll("tb")];
+  const cells = [...table.querySelectorAll("td")];
   state.texts.forEach((text, index) => {
     cells[idnex].textContent = text ?? index;
   });
@@ -115,10 +115,39 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  const authorModeToggle = document.querySelector(".author-switcher input[type='checkbox']");
+  if (authorModeToggle) {
+    authorModeToggle.addEventListener("change", () => {
+      state.isAuthorMode = authorModeToggle.checked;
+      if (state.isAuthorMode) {
+        state.selected = [];
+        document.querySelector(".bingo").hidden = true;
+        render();
+      }
+    });
+  }
 
+  document.getElementById("table").addEventListener("click", (event) => {
+    if (!state.isAuthorMode) return;
 
-}
-);
+    const cell = event.target;
+    if (cell.tagName !== "TD") return;
+
+    event.stopPropagation();
+    if (!cell.querySelector("textarea")) {
+      const textarea = document.createElement("textarea");
+      textarea.value = cell.textContent;
+      textarea.addEventListener("blur", () => {
+        state.texts[cell.dataset.index] = textarea.value;
+        cell.textContent = textarea.value;
+        state.currentlyEditing = null;
+      });
+      cell.textContent = "";
+      cell.appendChild(textarea);
+      textarea.focus();
+    }
+  });
+});
 
 export function generateTable(num) {
   const table = document.createElement("table");
@@ -154,47 +183,9 @@ function handleCellClick(idx) {
     if (!state.selected.includes(idx)) {
       state.selected.push(idx);
     } else {
-      state.selected = state.selected.filter((item) => i != idx)
+      state.selected = state.selected.filter((item) => item != idx);
     }
   }
+  render();
 }
-
-//Режим автора
-document.addEventListener("DOMContentLoaded", () => {
-  const authorModeToggle = document.getElementById("authorModeToggle"); // Передбачимо, що є перемикач
-  if (authorModeToggle) {
-    authorModeToggle.addEventListener("change", () => {
-      state.isAuthorMode = authorModeToggle.checked;
-      if (state.isAuthorMode) {
-        state.selected = [];
-        document.querySelector("win").hidden = true;
-        render();
-      }
-    });
-  }
-
-  document.getElementById("table").addEventListener("click", (event) => {
-    if (!state.isAuthorMode) return; // Якщо режим не увімкнено — не даємо редагувати
-
-    const cell = event.target;
-    if (cell.tagName !== "TD") return;
-
-    const rowIndex = cell.parentElement.rowIndex;
-    const cellIndex = cell.cellIndex;
-    const idx = rowIndex * 5 + cellIndex; // Для 5x5 таблиці
-
-    event.stopPropagation();
-    if (!cell.querySelector("textarea")) {
-      const textarea = document.createElement("textarea");
-      textarea.value = cell.textContent;
-      textarea.addEventListener("blur", () => {
-        state.texts[idx] = textarea.value;
-        cell.textContent = textarea.value;
-        state.currentlyEditing = null;
-      });
-      cell.textContent = "";
-      cell.appendChild(textarea);
-      textarea.focus();
-    }
-  });
-});
+;
